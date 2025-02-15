@@ -6,28 +6,33 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*" },
+    transports: ["websocket", "polling"],
 });
 
 let players = {};
-let ball = { x: 300, y: 200, vx: 3, vy: 2 }; // Ball starts at (300,200) and moves right/down
+let ball = { x: 400, y: 300, vx: 4, vy: 3 }; // Ball moves at a reasonable speed
 
 io.on("connection", (socket) => {
     console.log("A player connected:", socket.id);
 
-    players[socket.id] = { x: 100, y: 100 };
+    // Assign player a paddle position
+    const playerCount = Object.keys(players).length;
+    players[socket.id] = {
+        x: playerCount === 0 ? 30 : 760, // Left or right side of screen
+        y: 260,
+    };
 
     socket.emit("currentPlayers", players);
     socket.emit("ballUpdate", ball);
-    socket.broadcast.emit("newPlayer", { id: socket.id, x: 100, y: 100 });
+    socket.broadcast.emit("newPlayer", {
+        id: socket.id,
+        ...players[socket.id],
+    });
 
     socket.on("playerMove", (data) => {
         if (players[socket.id]) {
-            players[socket.id] = data;
-            socket.broadcast.emit("updatePlayer", {
-                id: socket.id,
-                x: data.x,
-                y: data.y,
-            });
+            players[socket.id].y = Math.max(0, Math.min(data.y, 520)); // Keep paddle in bounds
+            socket.broadcast.emit("updatePlayer", { id: socket.id, y: data.y });
         }
     });
 
@@ -38,23 +43,42 @@ io.on("connection", (socket) => {
     });
 });
 
-// Game loop runs every 16ms (~60FPS)
+// Game loop to update ball
 setInterval(() => {
-    // Update ball position
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    // Check for collisions with top and bottom walls
-    if (ball.y <= 0 || ball.y >= 400) {
-        ball.vy *= -1; // Reverse direction
+    // Ball collision with top and bottom walls
+    if (ball.y <= 0 || ball.y >= 600) {
+        ball.vy *= -1; // Reverse vertical direction
     }
 
-    // Broadcast updated ball position to all players
+    // Check paddle collision
+    Object.values(players).forEach((paddle) => {
+        if (
+            ball.x >= paddle.x &&
+            ball.x <= paddle.x + 10 && // Paddle width
+            ball.y >= paddle.y &&
+            ball.y <= paddle.y + 80 // Paddle height
+        ) {
+            ball.vx *= -1; // Reverse horizontal direction
+        }
+    });
+
+    // Reset ball if it goes off the screen
+    if (ball.x < 0 || ball.x > 800) {
+        ball = {
+            x: 400,
+            y: 300,
+            vx: 4 * (Math.random() > 0.5 ? 1 : -1),
+            vy: 3,
+        };
+    }
+
     io.emit("ballUpdate", ball);
 }, 16);
 
 const PORT = process.env.PORT || 8080;
-
 server.listen(PORT, () => {
-    console.log(`Server running on ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
