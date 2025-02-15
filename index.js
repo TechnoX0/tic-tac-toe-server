@@ -1,14 +1,14 @@
-import { Server } from "socket.io";
-import express from "express";
-import http from "http";
+/* Backend (server.js) - Node.js + Socket.io */
+
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
-const PORT = process.env.PORT || 8080;
-const server = app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"],
     },
 });
 
@@ -42,8 +42,6 @@ io.on("connection", (socket) => {
         delete players[socket.id];
         io.emit("removePlayer", socket.id);
     });
-
-    console.log("New connection:", socket.id);
 });
 
 server.listen(3001, () => {
