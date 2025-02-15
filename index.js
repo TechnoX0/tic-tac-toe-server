@@ -1,3 +1,5 @@
+/* Backend (server.js) - Node.js + Socket.io */
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -7,57 +9,37 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"],
     },
 });
 
-let rooms = {}; // Store game rooms
+let players = {};
 
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    console.log("A player connected:", socket.id);
 
-    socket.on("createRoom", (room) => {
-        if (!rooms[room]) {
-            rooms[room] = {
-                players: [socket.id],
-                board: Array(9).fill(""),
-                turn: "X",
-            };
-            socket.join(room);
-            socket.emit("roomCreated", room);
-        }
-    });
+    players[socket.id] = { x: 100, y: 100 };
 
-    socket.on("joinRoom", (room) => {
-        if (rooms[room] && rooms[room].players.length < 2) {
-            rooms[room].players.push(socket.id);
-            socket.join(room);
-            io.to(room).emit("gameStart", rooms[room]);
-        }
-    });
+    socket.emit("currentPlayers", players);
+    socket.broadcast.emit("newPlayer", { id: socket.id, x: 100, y: 100 });
 
-    socket.on("makeMove", ({ room, index }) => {
-        const game = rooms[room];
-        if (game && game.board[index] === "") {
-            game.board[index] = game.turn;
-            game.turn = game.turn === "X" ? "O" : "X";
-            io.to(room).emit("updateBoard", game);
+    socket.on("playerMove", (data) => {
+        if (players[socket.id]) {
+            players[socket.id] = data;
+            socket.broadcast.emit("updatePlayer", {
+                id: socket.id,
+                x: data.x,
+                y: data.y,
+            });
         }
     });
 
     socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
-        for (let room in rooms) {
-            if (rooms[room].players.includes(socket.id)) {
-                delete rooms[room];
-                io.to(room).emit("playerLeft");
-            }
-        }
+        console.log("Player disconnected:", socket.id);
+        delete players[socket.id];
+        io.emit("removePlayer", socket.id);
     });
 });
 
-const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-    console.log("Server running on port 3000");
+server.listen(3001, () => {
+    console.log("Server running on port 3001");
 });
