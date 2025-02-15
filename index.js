@@ -6,7 +6,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*" },
-    transports: ["websocket", "polling"],
 });
 
 let players = {};
@@ -56,6 +55,6 @@ setInterval(() => {
 
 const PORT = process.env.PORT || 8080;
 
-server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
 });
