@@ -7,9 +7,8 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-    },
+    cors: { origin: "*" }, // Allow all origins
+    transports: ["websocket", "polling"],
 });
 
 let players = {};
@@ -44,6 +43,8 @@ io.on("connection", (socket) => {
     });
 });
 
-server.listen(3001, () => {
-    console.log("Server running on port 3001");
+const PORT = process.env.PORT || 8080; // Use 8080 as required by Fly.io
+
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
