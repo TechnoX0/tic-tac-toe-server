@@ -31,6 +31,10 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("pingCheck", (sentTime) => {
+        socket.emit("pongResponse", sentTime);
+    });
+
     socket.on("disconnect", () => {
         console.log("Player disconnected:", socket.id);
         delete players[socket.id];
