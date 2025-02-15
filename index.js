@@ -1,5 +1,3 @@
-/* Backend (server.js) - Node.js + Socket.io */
-
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
