@@ -45,7 +45,13 @@ class GameManager {
         if (Object.keys(this.players).length < 2) {
             this.gameStart = false;
             this.scores = { left: 0, right: 0 };
-            this.ball = new Ball(canvasWidth / 2, canvasHeight / 2, 4, 4, 8);
+            this.ball = new Ball(
+                this.canvasWidth / 2,
+                this.canvasHeight / 2,
+                4,
+                4,
+                8
+            );
         }
     }
 
