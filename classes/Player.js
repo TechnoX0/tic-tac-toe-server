@@ -1,6 +1,7 @@
 // Player.js
 class Player {
-    constructor(x, y, width, height, speed) {
+    constructor(id, x, y, width, height, speed) {
+        this.id = id;
         this.x = x;
         this.y = y;
         this.width = width;

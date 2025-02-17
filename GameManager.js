@@ -24,6 +24,7 @@ class GameManager {
         const xPos =
             playerCount === 0 ? 20 : this.canvasWidth - this.paddleWidth - 20;
         this.players[socketId] = new Player(
+            socketId,
             xPos,
             this.canvasHeight / 2 - this.paddleHeight / 2,
             this.paddleWidth,
@@ -42,7 +43,14 @@ class GameManager {
     removePlayer(socketId) {
         delete this.players[socketId];
 
-        if (Object.keys(this.players).length < 2) {
+        const remainingPlayers = Object.keys(this.players);
+        if (remainingPlayers.length === 1) {
+            // Move the remaining player to the left position
+            const playerId = remainingPlayers[0];
+            this.players[playerId].x = 20;
+        }
+
+        if (remainingPlayers.length < 2) {
             this.gameStart = false;
             this.scores = { left: 0, right: 0 };
             this.ball = new Ball(
@@ -70,41 +78,24 @@ class GameManager {
     updateGame() {
         if (!this.gameStart) return;
 
-        // Update player positions
         Object.values(this.players).forEach((player) =>
             player.update(this.canvasHeight)
         );
-
-        // Update ball and check collisions
         this.ball.update();
         const hasScored = this.ball.checkBoundaryCollision(
             this.canvasWidth,
             this.canvasHeight
         );
 
-        if (hasScored != "none") {
+        if (hasScored !== "none") {
             this.scores[hasScored]++;
-
-            switch (hasScored) {
-                case "left":
-                    this.ball = new Ball(
-                        this.canvasWidth / 2,
-                        this.canvasHeight / 2,
-                        -4,
-                        4,
-                        8
-                    );
-                    break;
-                case "left":
-                    this.ball = new Ball(
-                        this.canvasWidth / 2,
-                        this.canvasHeight / 2,
-                        4,
-                        4,
-                        8
-                    );
-                    break;
-            }
+            this.ball = new Ball(
+                this.canvasWidth / 2,
+                this.canvasHeight / 2,
+                hasScored === "right" ? 4 : -4,
+                4,
+                8
+            );
         }
 
         const playerArray = Object.values(this.players);
